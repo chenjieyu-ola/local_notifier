@@ -1,4 +1,5 @@
 import Cocoa
+import UserNotifications
 import FlutterMacOS
 
 public class LocalNotifierPlugin: NSObject, FlutterPlugin, NSUserNotificationCenterDelegate {
@@ -40,23 +41,33 @@ public class LocalNotifierPlugin: NSObject, FlutterPlugin, NSUserNotificationCen
         let subtitle: String? = args["subtitle"] as? String
         let body: String? = args["body"] as? String
         
-        let notification = NSUserNotification()
-        notification.identifier = identifier
-        notification.title = title
-        notification.subtitle = subtitle
-        notification.informativeText = body
-        notification.soundName = NSUserNotificationDefaultSoundName
-        
-        let actions: [NSDictionary]? = args["actions"] as? [NSDictionary];
-        
-        if (actions != nil && !(actions!.isEmpty)) {
-            let actionDict =  actions!.first as! [String: Any]
-            let actionText: String? = actionDict["text"] as? String
-            notification.actionButtonTitle = actionText!
+        let content = UNMutableNotificationContent()
+        content.title = NSLocalizedString(title!, comment: "")
+        if(body != nil){
+            content.body = body!
+        }
+        if(subtitle != nil){
+            content.subtitle = subtitle!
         }
         
-        NSUserNotificationCenter.default.deliver(notification)
-        self.notificationDict[identifier] = notification
+        content.sound = UNNotificationSound.default
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error { print("Notification failed to send: \(error.localizedDescription)") }
+        }
+        
+        
+//        let actions: [NSDictionary]? = args["actions"] as? [NSDictionary];
+//        
+//        if (actions != nil && !(actions!.isEmpty)) {
+//            let actionDict =  actions!.first as! [String: Any]
+//            let actionText: String? = actionDict["text"] as? String
+//            notification.actionButtonTitle = actionText!
+//        }
+//        
+//        NSUserNotificationCenter.default.deliver(notification)
+//        self.notificationDict[identifier] = notification
         
         result(true)
     }
