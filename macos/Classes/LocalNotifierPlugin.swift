@@ -2,7 +2,7 @@ import Cocoa
 import UserNotifications
 import FlutterMacOS
 
-public class LocalNotifierPlugin: NSObject, FlutterPlugin, NSUserNotificationCenterDelegate {
+public class LocalNotifierPlugin: NSObject, FlutterPlugin, UNUserNotificationCenterDelegate {
     var registrar: FlutterPluginRegistrar!;
     var channel: FlutterMethodChannel!
     
@@ -10,7 +10,8 @@ public class LocalNotifierPlugin: NSObject, FlutterPlugin, NSUserNotificationCen
     
     public override init() {
         super.init()
-        NSUserNotificationCenter.default.delegate = self
+//        NSUserNotificationCenter.default.delegate = self
+        UNUserNotificationCenter.current().delegate = self
     }
     
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -56,16 +57,17 @@ public class LocalNotifierPlugin: NSObject, FlutterPlugin, NSUserNotificationCen
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error { print("Notification failed to send: \(error.localizedDescription)") }
         }
+
         
         
 //        let actions: [NSDictionary]? = args["actions"] as? [NSDictionary];
-//        
+//
 //        if (actions != nil && !(actions!.isEmpty)) {
 //            let actionDict =  actions!.first as! [String: Any]
 //            let actionText: String? = actionDict["text"] as? String
 //            notification.actionButtonTitle = actionText!
 //        }
-//        
+//
 //        NSUserNotificationCenter.default.deliver(notification)
 //        self.notificationDict[identifier] = notification
         
@@ -87,17 +89,10 @@ public class LocalNotifierPlugin: NSObject, FlutterPlugin, NSUserNotificationCen
         result(true)
     }
     
-    public func userNotificationCenter(_ center: NSUserNotificationCenter, didActivate notification: NSUserNotification) {
-        _invokeMethod("onLocalNotificationClick", notification.identifier!)
+    public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        _invokeMethod("onLocalNotificationClick", response.notification.request.identifier)
     }
     
-    public func userNotificationCenter(_ center: NSUserNotificationCenter, didDeliver notification: NSUserNotification) {
-        _invokeMethod("onLocalNotificationShow", notification.identifier!)
-    }
-    
-    public func userNotificationCenter(_ center: NSUserNotificationCenter, shouldPresent notification: NSUserNotification) -> Bool {
-        return true
-    }
     
     public func _invokeMethod(_ methodName: String, _ notificationId: String) {
         let args: NSDictionary = [
